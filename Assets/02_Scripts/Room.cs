@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
 /*
  * Handles game logic in regards of the room. 
@@ -10,7 +10,7 @@ using System.Linq;
  */
 public class Room : SingletonMonoBehaviour<Room>
 {
-    public GameObject door,door2;
+    public GameObject door, door2;
     //public GameObject[] lights;
     //public GameObject[] clue;
     public AudioClip message;
@@ -55,7 +55,7 @@ public class Room : SingletonMonoBehaviour<Room>
 
             if (i >= currentPanel.clue.Length)
                 return;
-            
+
             var clueMaterial = currentPanel.clue[i].GetComponent<Renderer>().material;
             if (fruitCodes)
             {
@@ -87,7 +87,7 @@ public class Room : SingletonMonoBehaviour<Room>
     {
         if (!door) return;
         if (doorState == DOOR_STATE.CLOSED)
-        {          
+        {
             doorState = DOOR_STATE.OPENING;
             startTimeOfDoorState = Time.time;
             door.GetComponent<AudioSource>().Play();
@@ -105,7 +105,7 @@ public class Room : SingletonMonoBehaviour<Room>
     {
         bool isCorrectGuess = (digitGuess == code[codePosition]);
 
-        if (isCorrectGuess) 
+        if (isCorrectGuess)
         {
             // turn lights green
             for (int i = 0; i < currentPanel.lights.Length; i++)
@@ -117,14 +117,14 @@ public class Room : SingletonMonoBehaviour<Room>
             codePosition++;
             bool everyDigitCorrect = (codePosition == code.Length); // every digit correct
 
-            if (everyDigitCorrect) 
+            if (everyDigitCorrect)
             {
                 codePosition = 0;
-                return (correct:true, completed:true);
+                return (correct: true, completed: true);
             }
             else
             {
-                return (correct: true, completed:false);
+                return (correct: true, completed: false);
             }
         }
         else //wrong guess
@@ -144,7 +144,7 @@ public class Room : SingletonMonoBehaviour<Room>
     private void Update()
     {
         // animate doors opening and closing
-        float t = (Time.time - startTimeOfDoorState) / timeOfDoorOpening; 
+        float t = (Time.time - startTimeOfDoorState) / timeOfDoorOpening;
         if (doorState == DOOR_STATE.OPENING)
         {
             OpeningDoor(t);

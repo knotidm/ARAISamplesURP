@@ -49,7 +49,7 @@ namespace Unity.Sentis
             // CreateOps allows direct operations on tensors.
             ops = WorkerFactory.CreateOps(backendType, null);
 
-            ////The camera which we'll be using to calculate the rays on the image:
+            //The camera which we'll be using to calculate the rays on the image:
             lookCamera = Camera.main;
         }
 

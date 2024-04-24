@@ -30,6 +30,7 @@ public class Game : SingletonMonoBehaviour<Game>
         arAnchorCreator.OnFirstAnchorPrefabCreated -= SetRoom;
         arAnchorCreator.OnSecondAnchorPrefabCreated -= SetPanel;
     }
+
     private void SetRoom(GameObject gameObject)
     {
         currentRoom = gameObject.GetComponent<Room>();

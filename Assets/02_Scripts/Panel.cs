@@ -1,10 +1,10 @@
-using UnityEngine;
-using Unity.Sentis;
-using UnityEngine.UI;
 using System;
+using Unity.Sentis;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class Panel : MonoBehaviour
-{   
+{
     public GameObject screen;
     public Text predictionText;
     public GameObject[] lights;
@@ -58,11 +58,11 @@ public class Panel : MonoBehaviour
     // Draws a line on the panel by simply drawing a sequence of pixels
     private void DrawLine(Vector3 startp, Vector3 endp)
     {
-        int steps = (int)((endp - startp).magnitude * 2 + 1); 
-        for(float a = 0; a <= steps; a++)
+        int steps = (int)((endp - startp).magnitude * 2 + 1);
+        for (float a = 0; a <= steps; a++)
         {
             float t = a * 1f / steps;
-            DrawPoint(startp * (1 - t) + endp * t , 2, Color.white);
+            DrawPoint(startp * (1 - t) + endp * t, 2, Color.white);
         }
     }
 
@@ -92,7 +92,7 @@ public class Panel : MonoBehaviour
         }
     }
 
-    private void DrawPixel(int x,int y,Color color)
+    private void DrawPixel(int x, int y, Color color)
     {
         drawableTexture.SetPixel(x, y, color);
     }

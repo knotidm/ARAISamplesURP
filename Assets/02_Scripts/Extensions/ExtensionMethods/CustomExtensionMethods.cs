@@ -12,7 +12,7 @@ public static class CustomExtensionMethods
     {
         if ((collection == null) || (collection.Count <= 0))
         {
-            return default(T);
+            return default;
         }
 
         int index = MathematicalCalculator.UnityRandom(0, collection.Count);
@@ -24,7 +24,7 @@ public static class CustomExtensionMethods
     {
         if ((collection == null) || (collection.Length <= 0))
         {
-            return default(T);
+            return default;
         }
 
         int index = MathematicalCalculator.UnityRandom(0, collection.Length);
@@ -56,7 +56,7 @@ public static class CustomExtensionMethods
     {
         if (target == null || target.Count <= 0)
         {
-            return default(T);
+            return default;
         }
 
         return target[0];
@@ -66,10 +66,10 @@ public static class CustomExtensionMethods
     {
         if (collection == null || collection.Count <= 0)
         {
-            return default(T);
+            return default;
         }
 
-        return collection[collection.Count - 1];
+        return collection[^1];
     }
 
     public static int GetLastElementIndex<T>(this List<T> collection)
@@ -94,14 +94,14 @@ public static class CustomExtensionMethods
 
     public static bool IsLastElementIndex<T>(this List<T> collection, int index)
     {
-        return (collection != null) ? index == collection.Count - 1 : false;
+        return (collection != null) && index == collection.Count - 1;
     }
 
     public static T GetFirstElement<T>(this T[] collection)
     {
         if (collection == null || collection.Length <= 0)
         {
-            return default(T);
+            return default;
         }
 
         return collection[0];
@@ -110,15 +110,15 @@ public static class CustomExtensionMethods
     {
         if (collection == null || collection.Length <= 0)
         {
-            return default(T);
+            return default;
         }
 
-        return collection[collection.Length - 1];
+        return collection[^1];
     }
 
     public static bool IsEmpty<T>(this List<T> collection)
     {
-        return (collection != null) ? collection.Count <= 0 : true;
+        return collection == null || collection.Count <= 0;
     }
 
     public static void RemoveNullElements<T>(this List<T> target)
@@ -160,7 +160,7 @@ public static class CustomExtensionMethods
             }
         }
 
-        return default(T);
+        return default;
     }
 
     public static string[] GetElementNamesCollection<T>(this List<T> collection) where T : IName
@@ -203,9 +203,7 @@ public static class CustomExtensionMethods
         {
             n--;
             int k = random.Next(n + 1);
-            T value = list[k];
-            list[k] = list[n];
-            list[n] = value;
+            (list[n], list[k]) = (list[k], list[n]);
         }
     }
 
@@ -334,6 +332,7 @@ public static class CustomExtensionMethods
         {
             text = text.Replace(orderedHTMLListText, orderedList);
         }
+
         if (!string.IsNullOrEmpty(unorderedHTMLListText))
         {
             text = text.Replace(unorderedHTMLListText, unorderedListText);
@@ -346,24 +345,30 @@ public static class CustomExtensionMethods
     {
         var parent = image.transform.parent.GetComponentInParent<RectTransform>();
         var imageTransform = image.GetComponent<RectTransform>();
+
         if (!parent)
         {
             return imageTransform.sizeDelta;
         }
+
         padding = 1 - padding;
         float ratio = image.texture.width / (float)image.texture.height;
         var bounds = new Rect(0, 0, parent.rect.width, parent.rect.height);
+
         if (Mathf.RoundToInt(imageTransform.eulerAngles.z) % 180 == 90)
         {
             bounds.size = new Vector2(bounds.height, bounds.width);
         }
+
         float height = bounds.height * padding;
         float width = height * ratio;
+
         if (width > bounds.width * padding)
         {
             width = bounds.width * padding;
             height = width / ratio;
         }
+
         imageTransform.sizeDelta = new Vector2(width, height);
         return imageTransform.sizeDelta;
     }
