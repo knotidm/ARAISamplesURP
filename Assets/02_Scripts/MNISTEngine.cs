@@ -21,7 +21,7 @@ namespace Unity.Sentis
 
     public class MNISTEngine : SingletonMonoBehaviour<MNISTEngine>
     {
-        public ModelAsset mnistONNX;
+        [SerializeField] private ModelAsset mnistONNX;
 
         // engine type
         private IWorker engine;
