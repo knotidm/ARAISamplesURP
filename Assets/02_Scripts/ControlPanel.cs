@@ -3,7 +3,7 @@ using Unity.Sentis;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Panel : MonoBehaviour
+public class ControlPanel : MonoBehaviour
 {
     public GameObject screen;
     public Text predictionText;
@@ -20,9 +20,9 @@ public class Panel : MonoBehaviour
     private int predictedNumber;
     private float probability;
     private float timeOfLastEntry = float.MaxValue;
-    private float clearTime = 0.5f; // time digit is on screen before it is cleared
+    private float clearTime = 2f; // time digit is on screen before it is cleared
 
-    public Action<Room, int, float> callback;
+    public Action<Door, int, float> callback;
 
     private void Start()
     {
@@ -35,7 +35,6 @@ public class Panel : MonoBehaviour
 
         // emission map for glowing digits
         screen.GetComponent<Renderer>().material.SetTexture("_EmissionMap", drawableTexture);
-
     }
 
     private void ClearTexture()
@@ -48,7 +47,7 @@ public class Panel : MonoBehaviour
     // Calls the neural network to get the probabilities of different digits then selects the most likely
     private void Infer()
     {
-        var probabilityAndIndex = MNISTEngine.Instance.GetMostLikelyDigitProbability(drawableTexture);
+        (float, int) probabilityAndIndex = MNISTEngine.Instance.GetMostLikelyDigitProbability(drawableTexture);
 
         probability = probabilityAndIndex.Item1;
         predictedNumber = probabilityAndIndex.Item2;
@@ -124,7 +123,7 @@ public class Panel : MonoBehaviour
         // After a certain time we want to clear the panel:
         if ((Time.time - timeOfLastEntry) > clearTime)
         {
-            callback?.Invoke(Room.Instance, predictedNumber, probability);
+            callback?.Invoke(Door.Instance, predictedNumber, probability);
             ClearTexture();
             timeOfLastEntry = float.MaxValue;
         }

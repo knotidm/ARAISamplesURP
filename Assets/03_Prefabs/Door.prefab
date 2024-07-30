@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6358642801619511655}
   - component: {fileID: 4364014052257907933}
   m_Layer: 0
-  m_Name: Room
+  m_Name: Door
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

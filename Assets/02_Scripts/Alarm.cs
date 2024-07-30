@@ -13,7 +13,7 @@ public class Alarm : MonoBehaviour
     private float startTimeOfState = 0;
     private float alarmPeriod = 2f; // number of seconds for alarm
     private Color defaultLightColor;
-    private Panel currentPanel;
+    private ControlPanel currentPanel;
 
     // Start is called before the first frame update
     private void Start()
@@ -39,7 +39,7 @@ public class Alarm : MonoBehaviour
         }
     }
 
-    public void StartAlarm(Panel panel)
+    public void StartAlarm(ControlPanel panel)
     {
         currentPanel = panel;
         state = STATE.ALARM;
