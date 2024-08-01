@@ -17,7 +17,7 @@ public class ControlPanel : MonoBehaviour
     private Vector3 lastCoord; // last position of mouse on screen
 
     // digit recognition
-    private int predictedNumber;
+    private int predictedIndex;
     private float probability;
     private float timeOfLastEntry = float.MaxValue;
     private float clearTime = 2f; // time digit is on screen before it is cleared
@@ -47,11 +47,14 @@ public class ControlPanel : MonoBehaviour
     // Calls the neural network to get the probabilities of different digits then selects the most likely
     private void Infer()
     {
-        (float, int) probabilityAndIndex = MNISTEngine.Instance.GetMostLikelyDigitProbability(drawableTexture);
+        (float, int) probabilityAndPredictedIndex = MNISTEngine.Instance.GetResults(drawableTexture);
 
-        probability = probabilityAndIndex.Item1;
-        predictedNumber = probabilityAndIndex.Item2;
-        predictionText.text = predictedNumber.ToString();
+        probability = probabilityAndPredictedIndex.Item1;
+        predictedIndex = probabilityAndPredictedIndex.Item2;
+
+        char predictedResult = (char)MNISTEngine.Instance._map[predictedIndex];
+
+        predictionText.text = predictedResult.ToString();
     }
 
     // Draws a line on the panel by simply drawing a sequence of pixels
@@ -123,7 +126,7 @@ public class ControlPanel : MonoBehaviour
         // After a certain time we want to clear the panel:
         if ((Time.time - timeOfLastEntry) > clearTime)
         {
-            callback?.Invoke(Door.Instance, predictedNumber, probability);
+            callback?.Invoke(Door.Instance, predictedIndex, probability);
             ClearTexture();
             timeOfLastEntry = float.MaxValue;
         }

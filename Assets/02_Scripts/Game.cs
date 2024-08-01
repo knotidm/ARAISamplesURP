@@ -131,9 +131,6 @@ public class Game : SingletonMonoBehaviour<Game>
     //This is called from the panel once a digit has been entered. It gives the predicted number and the probability:
     private void GotNumber(Door room, int number, float probability)
     {
-        GetComponent<AudioSource>().PlayOneShot(numbers[number]);
-        Debug.Log("Predicted number " + number + "\nProbability " + (probability * 100) + "%");
-
         //now we need to check if this code is correct:
         (bool correct, bool completed) = CheckCode(number);
 
@@ -143,6 +140,12 @@ public class Game : SingletonMonoBehaviour<Game>
             door = room;
             Invoke(nameof(SoundAlarm), 0.5f);
         }
+        else
+        {
+            GetComponent<AudioSource>().PlayOneShot(numbers[number]);
+            Debug.Log($"Predicted number {number}\nProbability {probability * 100}%");
+        }
+
         if (completed)
         {
             if (room.doorState == Door.DOOR_STATE.CLOSED)

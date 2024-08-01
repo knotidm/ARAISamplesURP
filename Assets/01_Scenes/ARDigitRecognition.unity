@@ -196,8 +196,12 @@ Light:
   m_BoundingSphereOverride: {x: 0, y: 7e-45, z: 9.1835e-41, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
 --- !u!4 &422218015
 Transform:
   m_ObjectHideFlags: 0
@@ -499,8 +503,9 @@ MonoBehaviour:
   - {fileID: 2800000, guid: cb8f287709460904bb2543999ea9896a, type: 3}
   - {fileID: 2800000, guid: e9ca24267df8f234591b6f9850ff394c, type: 3}
   - {fileID: 2800000, guid: 1ae4866cbf7d05f498a5ca22a0bfa18e, type: 3}
-  playerCamera: {fileID: 1354141926}
-  circleCursor: {fileID: 0}
+  fruitCodes: 0
+  code: 
+  codePosition: 0
 --- !u!4 &573635100
 Transform:
   m_ObjectHideFlags: 0
@@ -689,6 +694,7 @@ MonoBehaviour:
   m_FocusMode: -1
   m_LightEstimationMode: -1
   m_AutoFocus: 1
+  m_ImageStabilization: 0
   m_LightEstimation: 0
   m_FacingDirection: 1
   m_RenderMode: 0
@@ -763,12 +769,12 @@ MonoBehaviour:
   m_RequiresColorTexture: 0
   m_Version: 2
   m_TaaSettings:
-    quality: 3
-    frameInfluence: 0.1
-    jitterScale: 1
-    mipBias: 0
-    varianceClampScale: 0.9
-    contrastAdaptiveSharpening: 0
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
 --- !u!81 &1354141932
 AudioListener:
   m_ObjectHideFlags: 0
@@ -829,7 +835,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Camera: {fileID: 1354141926}
   m_OriginBaseGameObject: {fileID: 1659859597}
-  m_CameraFloorOffsetObject: {fileID: 0}
+  m_CameraFloorOffsetObject: {fileID: 1659859597}
   m_RequestedTrackingOriginMode: 0
   m_CameraYOffset: 1.1176
 --- !u!114 &1659859601
@@ -844,6 +850,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1760703bbd54c04488a8d10600262ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <trackablesChanged>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
   m_PlanePrefab: {fileID: 433650274009620016, guid: d6898996ef12ca243b95cc30d5710207, type: 3}
   m_DetectionMode: -1
 --- !u!114 &1659859602
@@ -858,6 +867,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 728ad7fae8e460a4ba41265c7308d757, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <trackablesChanged>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
   m_AnchorPrefab: {fileID: 0}
 --- !u!114 &1659859603
 MonoBehaviour:
@@ -871,6 +883,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa17d122634046b4a8e23048891fafc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <trackablesChanged>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
   m_RaycastPrefab: {fileID: 0}
 --- !u!114 &1659859604
 MonoBehaviour:
@@ -930,7 +945,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10226913013c0ed4aa09854aa922e2d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mnistONNX: {fileID: 5022602860645237092, guid: c0deb95c48499044bad7674258bf9b34, type: 3}
+  _modelAsset: {fileID: 5022602860645237092, guid: 3566f6fd9e8303949bb31dcb65005934, type: 3}
 --- !u!4 &1788678651
 Transform:
   m_ObjectHideFlags: 0
