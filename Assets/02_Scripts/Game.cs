@@ -6,6 +6,7 @@ public class Game : SingletonMonoBehaviour<Game>
 {
     public Alarm alarm;
     public ARAnchorCreator arAnchorCreator;
+    public TextToSpeech textToSpeech;
 
     public AudioClip[] numbers;
     public Texture2D[] digits;
@@ -131,6 +132,9 @@ public class Game : SingletonMonoBehaviour<Game>
     //This is called from the panel once a digit has been entered. It gives the predicted number and the probability:
     private void GotNumber(Door room, int number, float probability)
     {
+        char predictedResult = (char)Unity.Sentis.MNISTEngine.Instance._map[number];
+        textToSpeech.RunTextToSpeech(predictedResult.ToString());
+
         //now we need to check if this code is correct:
         (bool correct, bool completed) = CheckCode(number);
 
@@ -139,11 +143,6 @@ public class Game : SingletonMonoBehaviour<Game>
             //The guess is not correct so sound the alarm:
             door = room;
             Invoke(nameof(SoundAlarm), 0.5f);
-        }
-        else
-        {
-            GetComponent<AudioSource>().PlayOneShot(numbers[number]);
-            Debug.Log($"Predicted number {number}\nProbability {probability * 100}%");
         }
 
         if (completed)
