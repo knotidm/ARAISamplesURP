@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.XR.AR;
 
 /// <summary>
 /// This class is used to control the behavior of our Robot (State Machine and Utility function)
@@ -46,10 +47,10 @@ public class JammoBehavior : MonoBehaviour
     public float reachedPositionDistance;       // Tolerance distance between the robot and object.
     public float reachedObjectPositionDistance; // Tolerance distance between the robot and object.
     public Transform playerPosition;            // Our position
-    public GameObject goalObject;
+    private GameObject goalObject;
     public GameObject grabPosition;             // Position where the object will be placed during the grab
 
-    public Camera cam;                          // Main Camera
+    private Camera mainCamera;                          // Main Camera
 
     [Header("Input UI")]
     public TMPro.TMP_InputField inputField;     // Our Input Field UI
@@ -70,8 +71,16 @@ public class JammoBehavior : MonoBehaviour
         // Set the State to Idle
         state = State.Idle;
 
+        mainCamera = Camera.main;
+        goalObject = mainCamera.gameObject;
+
+        if (ARPointer.Instance != null)
+        {
+            playerPosition = ARPointer.Instance.transform;
+        }
+
         // Take all the possible actions in actionsList
-        foreach (JammoBehavior.Actions actions in actionsList)
+        foreach (Actions actions in actionsList)
         {
             sentences.Add(actions.sentence);
         }
@@ -84,7 +93,7 @@ public class JammoBehavior : MonoBehaviour
     /// </summary>
     private void RotateTo()
     {
-        var _lookRotation = Quaternion.LookRotation(cam.transform.position);
+        var _lookRotation = Quaternion.LookRotation(mainCamera.transform.position);
         agent.transform.rotation = Quaternion.RotateTowards(agent.transform.rotation, _lookRotation, 360);
     }
 
@@ -140,7 +149,7 @@ public class JammoBehavior : MonoBehaviour
             string verb = actionsList[maxScoreIndex].verb;
 
             // Set the Robot State == verb
-            state = (State)System.Enum.Parse(typeof(State), verb, true);
+            state = (State)Enum.Parse(typeof(State), verb, true);
         }
     }
 

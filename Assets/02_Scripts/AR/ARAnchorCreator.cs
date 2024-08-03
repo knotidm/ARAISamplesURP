@@ -28,8 +28,8 @@ namespace UnityEngine.XR.AR
 
         public bool justOnce;
 
-        private bool firstPrefab;
-        private bool secondPrefab;
+        private bool isFirstPrefabInstantiated;
+        private bool isSecondPrefabInstantiated;
 
         public Action<GameObject> OnFirstAnchorPrefabCreated;
         public Action<GameObject> OnSecondAnchorPrefabCreated;
@@ -58,7 +58,7 @@ namespace UnityEngine.XR.AR
 
         private void Update()
         {
-            if (justOnce && firstPrefab && secondPrefab)
+            if (justOnce && isFirstPrefabInstantiated && isSecondPrefabInstantiated)
                 return;
             // If there is no tap, then simply do nothing until the next call to Update().
             if (Input.touchCount == 0)
@@ -74,16 +74,16 @@ namespace UnityEngine.XR.AR
                 // will be the closest hit.
                 Pose hitPose = s_Hits[0].pose;
                 hitPose.rotation = Quaternion.identity;
-                var hitTrackableId = s_Hits[0].trackableId;
-                var hitPlane = m_PlaneManager.GetPlane(hitTrackableId);
+                TrackableId hitTrackableId = s_Hits[0].trackableId;
+                ARPlane hitPlane = m_PlaneManager.GetPlane(hitTrackableId);
 
                 // This attaches an anchor to the area on the plane corresponding to the raycast hit,
                 // and afterwards instantiates an instance of your chosen prefab at that point.
                 // This prefab instance is parented to the anchor to make sure the position of the prefab is consistent
                 // with the anchor, since an anchor attached to an ARPlane will be updated automatically by the ARAnchorManager as the ARPlane's exact position is refined.
-                var anchor = m_AnchorManager.AttachAnchor(hitPlane, hitPose);
+                ARAnchor anchor = m_AnchorManager.AttachAnchor(hitPlane, hitPose);
 
-                GameObject anchorPrefab = firstPrefab ? Instantiate(m_AnchorPrefab2, anchor.transform) : Instantiate(m_AnchorPrefab, anchor.transform);
+                GameObject anchorPrefab = isFirstPrefabInstantiated ? Instantiate(m_AnchorPrefab2, anchor.transform) : Instantiate(m_AnchorPrefab, anchor.transform);
 
                 if (anchor == null)
                 {
@@ -94,15 +94,15 @@ namespace UnityEngine.XR.AR
                     // Stores the anchor so that it may be removed later.
                     m_AnchorPoints.Add(anchor);
 
-                    if (firstPrefab)
+                    if (isFirstPrefabInstantiated)
                     {
                         OnSecondAnchorPrefabCreated?.Invoke(anchorPrefab);
-                        secondPrefab = true;
+                        isSecondPrefabInstantiated = true;
                     }
                     else
                     {
                         OnFirstAnchorPrefabCreated?.Invoke(anchorPrefab);
-                        firstPrefab = true;
+                        isFirstPrefabInstantiated = true;
                     }
 
                 }

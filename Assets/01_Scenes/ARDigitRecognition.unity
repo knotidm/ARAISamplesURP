@@ -258,7 +258,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6163643576762074529, guid: 39aa576f629969c43b1b75a71ef25721, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6163643576762074529, guid: 39aa576f629969c43b1b75a71ef25721, type: 3}
       propertyPath: m_LocalPosition.z
@@ -981,7 +981,7 @@ MonoBehaviour:
   m_OriginBaseGameObject: {fileID: 1659859597}
   m_CameraFloorOffsetObject: {fileID: 1659859597}
   m_RequestedTrackingOriginMode: 0
-  m_CameraYOffset: 1.1176
+  m_CameraYOffset: 0
 --- !u!114 &1659859601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1159,7 +1159,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1484588428729696583, guid: bd2daafbb5ece104c816cd4b401e5af3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1484588428729696583, guid: bd2daafbb5ece104c816cd4b401e5af3, type: 3}
       propertyPath: m_LocalPosition.z

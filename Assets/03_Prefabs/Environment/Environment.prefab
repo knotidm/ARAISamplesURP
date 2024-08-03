@@ -2097,7 +2097,7 @@ GameObject:
   - component: {fileID: 1409714193279238702}
   - component: {fileID: 1409714193279238703}
   m_Layer: 0
-  m_Name: Red Pillar
+  m_Name: RedPillar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 1
@@ -7755,7 +7755,7 @@ GameObject:
   - component: {fileID: 1443900667765301596}
   - component: {fileID: 8244431598417984239}
   m_Layer: 0
-  m_Name: Tree_03
+  m_Name: LeftTree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 1
@@ -8191,7 +8191,7 @@ GameObject:
   - component: {fileID: 1443900667199575766}
   - component: {fileID: 8244431599795260773}
   m_Layer: 0
-  m_Name: Tree_03 (1)
+  m_Name: RightTree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
