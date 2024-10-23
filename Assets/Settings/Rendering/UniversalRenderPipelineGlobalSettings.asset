@@ -55,18 +55,7 @@ MonoBehaviour:
       - rid: 9145189647983312915
       - rid: 9145189647983312916
     m_RuntimeSettings:
-      m_List:
-      - rid: 9145189647983312896
-      - rid: 9145189647983312897
-      - rid: 9145189647983312898
-      - rid: 9145189647983312900
-      - rid: 9145189647983312901
-      - rid: 9145189647983312904
-      - rid: 9145189647983312906
-      - rid: 9145189647983312908
-      - rid: 9145189647983312914
-      - rid: 9145189647983312915
-      - rid: 9145189647983312916
+      m_List: []
   m_AssetVersion: 8
   m_ObsoleteDefaultVolumeProfile: {fileID: 0}
   m_RenderingLayerNames:
@@ -103,6 +92,8 @@ MonoBehaviour:
           type: 3}
         m_xrMirrorViewPS: {fileID: 4800000, guid: d5a307c014552314b9f560906d708772,
           type: 3}
+        m_xrMotionVector: {fileID: 4800000, guid: f89aac1e4f84468418fe30e611dff395,
+          type: 3}
     - rid: 9145189647983312898
       type: {class: UniversalRendererResources, ns: UnityEngine.Rendering.Universal,
         asm: Unity.RenderPipelines.Universal.Runtime}
@@ -132,8 +123,7 @@ MonoBehaviour:
           type: 3}
         m_FallOffLookup: {fileID: 2800000, guid: 5688ab254e4c0634f8d6c8e0792331ca,
           type: 3}
-        m_DefaultCustomMaterial: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3,
-          type: 2}
+        m_CopyDepthPS: {fileID: 4800000, guid: d6dae50ee9e1bfa4db75f19f99355220, type: 3}
         m_DefaultLitMaterial: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3,
           type: 2}
         m_DefaultUnlitMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40,
@@ -270,6 +260,10 @@ MonoBehaviour:
         skyOcclusionCS: {fileID: 7200000, guid: 798f52ec82fa04048a12826bbbbcf7b4,
           type: 3}
         skyOcclusionRT: {fileID: 4807578003741378534, guid: dfaf42b38dd001f49a72d8102b709f29,
+          type: 3}
+        renderingLayerCS: {fileID: -6772857160820960102, guid: 94a070d33e408384bafc1dea4a565df9,
+          type: 3}
+        renderingLayerRT: {fileID: -5126288278712620388, guid: 94a070d33e408384bafc1dea4a565df9,
           type: 3}
     - rid: 9145189647983312910
       type: {class: ProbeVolumeGlobalSettings, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
