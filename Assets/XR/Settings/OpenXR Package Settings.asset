@@ -63,6 +63,7 @@ MonoBehaviour:
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
   m_foveatedRenderingApi: 0
+  versionChanged: 0
 --- !u!114 &-8141607500619013533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -969,6 +970,7 @@ MonoBehaviour:
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
   m_foveatedRenderingApi: 0
+  versionChanged: 0
 --- !u!114 &5363933701185963474
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1089,6 +1091,7 @@ MonoBehaviour:
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
   m_foveatedRenderingApi: 0
+  versionChanged: 0
 --- !u!114 &6720732313735848337
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1129,6 +1132,7 @@ MonoBehaviour:
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
   m_foveatedRenderingApi: 0
+  versionChanged: 0
 --- !u!114 &6763875769094488454
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1311,6 +1315,7 @@ MonoBehaviour:
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
   m_foveatedRenderingApi: 0
+  versionChanged: 0
 --- !u!114 &8572673679526423431
 MonoBehaviour:
   m_ObjectHideFlags: 0
