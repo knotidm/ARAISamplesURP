@@ -132,7 +132,7 @@ public class Game : SingletonMonoBehaviour<Game>
     //This is called from the panel once a digit has been entered. It gives the predicted number and the probability:
     private void GotNumber(Door room, int number, float probability)
     {
-        char predictedResult = (char)Unity.Sentis.MNISTEngine.Instance._map[number];
+        char predictedResult = (char)MNISTEngine.Instance._map[number];
         textToSpeech.RunTextToSpeech(predictedResult.ToString());
 
         //now we need to check if this code is correct:

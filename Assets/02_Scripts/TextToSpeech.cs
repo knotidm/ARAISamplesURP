@@ -173,11 +173,11 @@ public class TextToSpeech : MonoBehaviour
         int[] tokens = GetTokens(ptext);
 
         using var input = new Tensor<int>(new TensorShape(tokens.Length), tokens);
-        var result = engine.Execute(input);
+        engine.Schedule(input);
 
-        Tensor<float> output = result.PeekOutput("wav") as Tensor<float>;
-        output.MakeReadable();
-        float[] samples = output.ToReadOnlyArray();
+        Tensor<float> output = engine.PeekOutput("wav") as Tensor<float>;
+        // output.MakeReadable(); // Removed
+        float[] samples = output.DownloadToArray();
 
         Debug.Log($"Audio size = {samples.Length / samplerate} seconds");
 

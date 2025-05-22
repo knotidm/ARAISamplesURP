@@ -55,7 +55,7 @@ public class SentenceSimilarity : MonoBehaviour
         Tensor<float> outputTensor = worker.PeekOutput("last_hidden_state") as Tensor<float>;
 
         // Step 4: Perform pooling
-        Tensor<float> MeanPooledTensor = SentenceSimilarityUtils_.MeanPooling(inputSentencesTokensTensor["attention_mask"], outputTensor);
+        Tensor<float> MeanPooledTensor = SentenceSimilarityUtils_.MeanPooling((Tensor<int>)inputSentencesTokensTensor["attention_mask"], outputTensor);
 
         // Step 5: Normalize the results
         Tensor<float> NormedTensor = SentenceSimilarityUtils_.L2Norm(MeanPooledTensor);

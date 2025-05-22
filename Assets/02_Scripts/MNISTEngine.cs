@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.InferenceEngine;
-using static Unity.InferenceEngine.Functional;
+// using static Unity.InferenceEngine.Functional; // Will be removed if not used
 using UnityEngine;
 
 public class MNISTEngine : SingletonMonoBehaviour<MNISTEngine>
@@ -80,18 +80,31 @@ public class MNISTEngine : SingletonMonoBehaviour<MNISTEngine>
         {
             OnDestroy();
 
+            OnDestroy(); // This was already here, keeping it.
+
             _runtimeModel = ModelLoader.Load(_modelAsset);
-            _inputTensor = new Tensor<float>(new TensorShape(1, 1, imageWidth, imageWidth));
+            // _inputTensor is initialized in Start and re-initialized here after OnDestroy
+            _inputTensor = new Tensor<float>(new TensorShape(1, 1, imageWidth, imageWidth)); 
             TextureConverter.ToTensor(texture, _inputTensor);
             _worker = new Worker(_runtimeModel, _backendType);
-            _worker.Execute(_inputTensor);
+            _worker.Schedule(_inputTensor);
             _outputTensor = _worker.PeekOutput() as Tensor<float>;
 
-            Tensor<float> probabilities = Functional.Softmax(_outputTensor);
-
-            probabilities.MakeReadable();
-
-            float[] results = probabilities.ToReadOnlyArray();
+            // Manual Softmax implementation
+            float[] outputData = _outputTensor.DownloadToArray(); // Makes data readable on CPU
+            float[] probabilitiesData = new float[outputData.Length];
+            float sumExp = 0.0f;
+            for (int i = 0; i < outputData.Length; ++i)
+            {
+                probabilitiesData[i] = Mathf.Exp(outputData[i]);
+                sumExp += probabilitiesData[i];
+            }
+            for (int i = 0; i < probabilitiesData.Length; ++i)
+            {
+                probabilitiesData[i] /= sumExp;
+            }
+            
+            float[] results = probabilitiesData;
 
             float probability = results.Max();
             int predictedIndex = results.ToList().IndexOf(probability);
