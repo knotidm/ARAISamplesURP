@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Unity.InferenceEngine;
-using Unity.InferenceEngine.Functional;
+using static Unity.InferenceEngine.Functional;
 using UnityEngine;
 
 /*

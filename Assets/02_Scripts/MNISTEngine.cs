@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.InferenceEngine;
-using Unity.InferenceEngine.Functional;
+using static Unity.InferenceEngine.Functional;
 using UnityEngine;
 
 public class MNISTEngine : SingletonMonoBehaviour<MNISTEngine>
