@@ -145,10 +145,10 @@ public class RunWhisper : MonoBehaviour
         System.Array.Copy(data, 0, paddedData, 0, numSamples);
         using var input30seconds = new Tensor<float>(new TensorShape(1, maxSamples), paddedData);
 
-        spectroEngine.Execute(input30seconds);
+        spectroEngine.Schedule(input30seconds);
         var spectroOutput = spectroEngine.PeekOutput() as Tensor<float>;
 
-        encoderEngine.Execute(spectroOutput);
+        encoderEngine.Schedule(spectroOutput);
         encodedAudio = encoderEngine.PeekOutput() as Tensor<float>;
     }
 
@@ -163,16 +163,53 @@ public class RunWhisper : MonoBehaviour
             var inputs = new Dictionary<string, Tensor>
             {
                 {"encoded_audio",encodedAudio },
+                {"encoded_audio",encodedAudio },
                 {"tokens" , tokensSoFar }
             };
 
-            decoderEngine.Execute(inputs);
+            decoderEngine.SetInput("encoded_audio", encodedAudio); // encodedAudio is Tensor<float>
+            decoderEngine.SetInput("tokens", tokensSoFar);       // tokensSoFar is Tensor<int>
+            decoderEngine.Schedule();
             var tokensOut = decoderEngine.PeekOutput() as Tensor<float>;
 
-            using var tokensPredictions = Unity.InferenceEngine.Functional.ArgMax(tokensOut, 2, false);
-            tokensPredictions.MakeReadable();
+            // tokensOut is Tensor<float> from PeekOutput()
+            // Expected shape: [batch_size, sequence_length, vocab_size]
+            // We need ArgMax along dimension 2 (vocab_size).
+            // The original code used tokensPredictions[currentToken] to get the ID.
+            // This implies currentToken refers to the sequence position.
 
-            int ID = tokensPredictions[currentToken];
+            float[] tokensOutData = tokensOut.DownloadToArray(); // Makes data readable on CPU
+            int batchSize = tokensOut.shape[0];
+            int sequenceLength = tokensOut.shape[1];
+            int vocabSize = tokensOut.shape[2];
+
+            int ID = -1; // Default to an invalid ID
+
+            // Assuming batchSize is 1 for this specific processing logic
+            if (batchSize == 1 && currentToken < sequenceLength)
+            {
+                float maxProbability = float.MinValue;
+                int predictedVocabIndex = -1;
+                int offsetForCurrentToken = currentToken * vocabSize;
+
+                for (int i = 0; i < vocabSize; ++i)
+                {
+                    float currentProbability = tokensOutData[offsetForCurrentToken + i];
+                    if (currentProbability > maxProbability)
+                    {
+                        maxProbability = currentProbability;
+                        predictedVocabIndex = i;
+                    }
+                }
+                ID = predictedVocabIndex;
+            }
+            else if (batchSize != 1)
+            {
+                Debug.LogWarning("Manual ArgMax in RunWhisper expected batch size of 1 but got " + batchSize);
+            }
+            // Note: The variable 'ID' will then be used as before:
+            // outputTokens[++currentToken] = ID;
+            // if (ID == END_OF_TEXT) ...
 
             outputTokens[++currentToken] = ID;
 

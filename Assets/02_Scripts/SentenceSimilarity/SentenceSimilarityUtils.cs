@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.InferenceEngine;
-using static Unity.InferenceEngine.Functional;
+// using static Unity.InferenceEngine.Functional; // Removed as it will be unused
 using UnityEngine;
 
 namespace SentenceSimilarityUtils
@@ -109,23 +109,65 @@ namespace SentenceSimilarityUtils
             if (AttentionMaskTensor == null || outputTensor == null)
             {
                 Debug.LogError("AttentionMaskTensor or outputTensor is null.");
+                // Return a default or error tensor if inputs are invalid
+                return new Tensor<float>(new TensorShape(outputTensor != null ? outputTensor.shape[0] : 1, outputTensor != null ? outputTensor.shape[2] : 1), 
+                                         new float[(outputTensor != null ? outputTensor.shape[0] : 1) * (outputTensor != null ? outputTensor.shape[2] : 1)]);
             }
 
-            // Create an attention mask and 
-            // add a new dimension (to make the mask compatible for element wise multiplication with token embeddings)
-            Tensor<float> AttentionMaskTensorFloat = Functional.Cast<float>(AttentionMaskTensor);
-            Tensor<float> InputMaskExpanded = Functional.Unsqueeze(AttentionMaskTensorFloat, -1);
+            // Manual Cast for Attention Mask
+            int[] attentionMaskData = AttentionMaskTensor.DownloadToArray();
+            float[] attentionMaskFloatData = new float[attentionMaskData.Length];
+            for (int i = 0; i < attentionMaskData.Length; ++i)
+            {
+                attentionMaskFloatData[i] = (float)attentionMaskData[i];
+            }
 
-            TensorShape outputShape = outputTensor.shape;
+            // Manual Broadcasted Multiplication (outputTensor * expanded attention mask)
+            float[] outputData = outputTensor.DownloadToArray();
+            int N = outputTensor.shape[0];
+            int L = outputTensor.shape[1];
+            int K = outputTensor.shape[2];
 
-            // Expand to 384 => [2, 6, 384]
-            Tensor<float> expandedMask = Functional.Expand(InputMaskExpanded, outputShape);
+            if (AttentionMaskTensor.shape.length != 2 || AttentionMaskTensor.shape[0] != N || AttentionMaskTensor.shape[1] != L)
+            {
+                Debug.LogError("Attention mask shape mismatch for broadcasting in MeanPooling. Expected [" + N + "," + L + "], got [" + AttentionMaskTensor.shape[0] + "," + AttentionMaskTensor.shape[1] + "]");
+                return new Tensor<float>(new TensorShape(N, K), new float[N * K]); // Return zeroed tensor
+            }
 
-            // torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-            Tensor<float> temp_ = outputTensor * expandedMask;
-            Tensor<float> MeanPooledTensor = Functional.ReduceMean(temp_, new int[] { 1 }, false);
+            float[] tempMulData = new float[N * L * K];
+            for (int n_idx = 0; n_idx < N; ++n_idx)
+            {
+                for (int l_idx = 0; l_idx < L; ++l_idx)
+                {
+                    float maskValue = attentionMaskFloatData[n_idx * L + l_idx];
+                    for (int k_idx = 0; k_idx < K; ++k_idx)
+                    {
+                        int index = n_idx * (L * K) + l_idx * K + k_idx;
+                        tempMulData[index] = outputData[index] * maskValue;
+                    }
+                }
+            }
 
-            return MeanPooledTensor;
+            // Manual ReduceMean (on tempMulData along axis 1 (L))
+            float[] meanPooledData = new float[N * K];
+            for (int n_idx = 0; n_idx < N; ++n_idx)
+            {
+                for (int k_idx = 0; k_idx < K; ++k_idx)
+                {
+                    float sum = 0;
+                    for (int l_idx = 0; l_idx < L; ++l_idx)
+                    {
+                        sum += tempMulData[n_idx * (L * K) + l_idx * K + k_idx];
+                    }
+                    
+                    float sumMaskValues = 0;
+                    for(int l_idx=0; l_idx < L; ++l_idx) { sumMaskValues += attentionMaskFloatData[n_idx*L + l_idx]; }
+                    if (sumMaskValues == 0) sumMaskValues = 1e-9f; // Avoid division by zero
+                    
+                    meanPooledData[n_idx * K + k_idx] = sum / sumMaskValues;
+                }
+            }
+            return new Tensor<float>(new TensorShape(N, K), meanPooledData);
         }
 
         /// <summary>
@@ -135,17 +177,41 @@ namespace SentenceSimilarityUtils
         /// <returns></returns>
         public static Tensor<float> L2Norm(Tensor<float> MeanPooledTensor)
         {
-            // L2 NORMALIZATION
-            // Compute L2 norm along axis 1 (dim=1)
-            Tensor<float> l2Norms = Functional.ReduceL2(MeanPooledTensor, new int[] { 1 }, true);
+            if (MeanPooledTensor == null)
+            {
+                 Debug.LogError("MeanPooledTensor is null in L2Norm.");
+                 // Consider what shape to return or if null is acceptable
+                 return null; 
+            }
+            // MeanPooledTensor shape is [N, K].
+            float[] meanPooledData = MeanPooledTensor.DownloadToArray();
+            int N_norm = MeanPooledTensor.shape[0];
+            int K_norm = MeanPooledTensor.shape[1];
+            float[] l2NormsData = new float[N_norm];
 
-            // Broadcast the L2 norms to the original shape
-            Tensor<float> l2NormsBroadcasted = Functional.Expand(l2Norms, MeanPooledTensor.shape);
+            for (int n_idx = 0; n_idx < N_norm; ++n_idx)
+            {
+                float sumSquares = 0;
+                for (int k_idx = 0; k_idx < K_norm; ++k_idx)
+                {
+                    float val = meanPooledData[n_idx * K_norm + k_idx];
+                    sumSquares += val * val;
+                }
+                l2NormsData[n_idx] = Mathf.Sqrt(sumSquares);
+            }
 
-            // Divide sentence_embeddings by their L2 norms to achieve normalization
-            Tensor<float> NormalizedEmbeddings = MeanPooledTensor / l2NormsBroadcasted;
-
-            return NormalizedEmbeddings;
+            // Manual Broadcasted Division (MeanPooledTensor / l2NormsBroadcasted)
+            float[] normalizedEmbeddingsData = new float[N_norm * K_norm];
+            for (int n_idx = 0; n_idx < N_norm; ++n_idx)
+            {
+                float norm = l2NormsData[n_idx];
+                if (norm == 0) norm = 1e-9f; // Avoid division by zero
+                for (int k_idx = 0; k_idx < K_norm; ++k_idx)
+                {
+                    normalizedEmbeddingsData[n_idx * K_norm + k_idx] = meanPooledData[n_idx * K_norm + k_idx] / norm;
+                }
+            }
+            return new Tensor<float>(MeanPooledTensor.shape, normalizedEmbeddingsData);
         }
 
         /// <summary>

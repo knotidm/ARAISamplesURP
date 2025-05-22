@@ -45,7 +45,11 @@ public class SentenceSimilarity : MonoBehaviour
         Dictionary<string, Tensor> inputSentencesTokensTensor = SentenceSimilarityUtils_.TokenizeInput(input);
 
         // Step 2: Compute embedding and get the output
-        worker.Execute(inputSentencesTokensTensor);
+        foreach (var entry in inputSentencesTokensTensor)
+        {
+            worker.SetInput(entry.Key, entry.Value);
+        }
+        worker.Schedule();
 
         // Step 3: Get the output from the neural network
         Tensor<float> outputTensor = worker.PeekOutput("last_hidden_state") as Tensor<float>;
@@ -71,8 +75,42 @@ public class SentenceSimilarity : MonoBehaviour
     /// <returns></returns>
     public Tensor<float> SentenceSimilarityScores(Tensor<float> InputSequence, Tensor<float> ComparisonSequences)
     {
-        Tensor<float> SentenceSimilarityScores_ = Functional.MatMul(InputSequence, Functional.Transpose(ComparisonSequences, new int[] { 1, 0 }));
-        return SentenceSimilarityScores_;
+        // InputSequence (A) shape: [N, K]
+        // ComparisonSequences (B) shape: [M, K]
+        // Result (A * B^T) shape: [N, M]
+
+        float[] aData = InputSequence.DownloadToArray();
+        int n = InputSequence.shape[0]; // num_input_sentences
+        int kA = InputSequence.shape[1]; // embedding_dim
+
+        float[] bData = ComparisonSequences.DownloadToArray();
+        int m = ComparisonSequences.shape[0]; // num_comparison_sentences
+        int kB = ComparisonSequences.shape[1]; // embedding_dim
+
+        if (kA != kB)
+        {
+            Debug.LogError("Embedding dimensions do not match for MatMul!");
+            // Return an empty or error tensor? For now, let it potentially fail later or return null.
+            // Or create an empty tensor: return new Tensor<float>(new TensorShape(n,m)); 
+             return new Tensor<float>(new TensorShape(n, m), new float[n * m]); // Return zeroed tensor
+        }
+
+        float[] resultData = new float[n * m];
+
+        for (int i = 0; i < n; ++i) // Over rows of A (InputSequence)
+        {
+            for (int j = 0; j < m; ++j) // Over rows of B (ComparisonSequences, which become columns of B^T)
+            {
+                float sum = 0;
+                for (int l = 0; l < kA; ++l) // Over columns of A / columns of B (embedding_dim)
+                {
+                    // A[i, l] * B[j, l] (since B is effectively transposed)
+                    sum += aData[i * kA + l] * bData[j * kB + l];
+                }
+                resultData[i * m + j] = sum;
+            }
+        }
+        return new Tensor<float>(new TensorShape(n, m), resultData);
     }
 
 
@@ -98,15 +136,54 @@ public class SentenceSimilarity : MonoBehaviour
 
         // Calculate the similarity score of the player input with each action
         Tensor<float> scores = SentenceSimilarityScores(NormEmbedSentences, NormEmbedComparisonSentences);
-        scores.MakeReadable(); // Be able to read this tensor
+        
+        // scores is Tensor<float>, result of our new SentenceSimilarityScores
+        // Shape: [num_input_sentences, num_comparison_sentences]
+        // We need ArgMax for axis 1. The original keepDims=true is implicitly handled 
+        // by how we structure the loop if num_input_sentences > 1.
+        // The script seems to assume num_input_sentences is 1.
 
-        // Helper to return only best score and index
-        Tensor<int> scoreIndex = Functional.ArgMax(scores, 1, true);
-        scoreIndex.MakeReadable();
+        float[] scoresData = scores.DownloadToArray();
+        int numInputSentences = scores.shape[0];
+        int numComparisonSentences = scores.shape[1];
+        
+        int topScoreIndex = -1;
+        float topScoreValue = float.MinValue;
 
-        int scoreIndexInt = scoreIndex[0];
-        scores.MakeReadable();
-        float score = scores[scoreIndexInt];
+        if (numInputSentences == 1) // Script's current logic implies this
+        {
+            for (int j = 0; j < numComparisonSentences; ++j)
+            {
+                if (scoresData[j] > topScoreValue)
+                {
+                    topScoreValue = scoresData[j];
+                    topScoreIndex = j;
+                }
+            }
+        }
+        else
+        {
+            // Handle case for multiple input sentences if necessary, though current script doesn't.
+            // For now, just operate on the first sentence's scores or log a warning.
+            Debug.LogWarning("RankSimilarityScores processing multiple input sentences, but taking best from first.");
+             for (int j = 0; j < numComparisonSentences; ++j) // Default to first sentence
+            {
+                if (scoresData[j] > topScoreValue)
+                {
+                    topScoreValue = scoresData[j];
+                    topScoreIndex = j;
+                }
+            }
+        }
+        
+        // Original return was Tuple.Create(scoreIndexInt, score)
+        // scoreIndexInt was the index, score was the value.
+        // The original `float score = scores[scoreIndexInt];` was problematic.
+        // Our new topScoreIndex and topScoreValue are what's needed.
+        // So, the variables `scoreIndexInt` and `score` should be assigned these values.
+        int scoreIndexInt = topScoreIndex;
+        float score = topScoreValue; 
+        // The rest of the method `return Tuple.Create(scoreIndexInt, score);` will use these.
 
         // Return the similarity score and the action index
         return Tuple.Create(scoreIndexInt, score);
