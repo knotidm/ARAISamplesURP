@@ -8,7 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.Sentis;
+using Unity.InferenceEngine;
+using Unity.InferenceEngine.Functional;
 using UnityEngine;
 
 namespace SentenceSimilarityUtils
@@ -102,9 +103,8 @@ namespace SentenceSimilarityUtils
         /// </summary>
         /// <param name="AttentionMaskTensor">Attention Mask Tensor</param>
         /// <param name="outputTensor">Output Tensor</param>
-        /// <param name="ops">Ops on tensor</param>
         /// <returns></returns>
-        public static TensorFloat MeanPooling(Tensor AttentionMaskTensor, TensorFloat outputTensor, Ops ops)
+        public static Tensor<float> MeanPooling(Tensor<int> AttentionMaskTensor, Tensor<float> outputTensor)
         {
             if (AttentionMaskTensor == null || outputTensor == null)
             {
@@ -113,18 +113,17 @@ namespace SentenceSimilarityUtils
 
             // Create an attention mask and 
             // add a new dimension (to make the mask compatible for element wise multiplication with token embeddings)
-            TensorFloat AttentionMaskTensorFloat = ops.Cast(AttentionMaskTensor, DataType.Float) as TensorFloat;
-            Tensor InputMaskExpanded = AttentionMaskTensorFloat.ShallowReshape(AttentionMaskTensorFloat.shape.Unsqueeze(-1));
-            TensorFloat InputMaskExpandedFloat = ops.Cast(InputMaskExpanded, DataType.Float) as TensorFloat;
+            Tensor<float> AttentionMaskTensorFloat = Functional.Cast<float>(AttentionMaskTensor);
+            Tensor<float> InputMaskExpanded = Functional.Unsqueeze(AttentionMaskTensorFloat, -1);
 
             TensorShape outputShape = outputTensor.shape;
 
             // Expand to 384 => [2, 6, 384]
-            InputMaskExpandedFloat = ops.Expand(InputMaskExpandedFloat, outputShape) as TensorFloat;
+            Tensor<float> expandedMask = Functional.Expand(InputMaskExpanded, outputShape);
 
             // torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-            TensorFloat temp_ = ops.Mul(outputTensor, InputMaskExpandedFloat);
-            TensorFloat MeanPooledTensor = ops.ReduceMean(temp_, new int[] { 1 }, false);
+            Tensor<float> temp_ = outputTensor * expandedMask;
+            Tensor<float> MeanPooledTensor = Functional.ReduceMean(temp_, new int[] { 1 }, false);
 
             return MeanPooledTensor;
         }
@@ -133,19 +132,18 @@ namespace SentenceSimilarityUtils
         /// L2 Normalization
         /// </summary>
         /// <param name="MeanPooledTensor"></param>
-        /// <param name="ops">Ops on tensor</param>
         /// <returns></returns>
-        public static TensorFloat L2Norm(TensorFloat MeanPooledTensor, Ops ops)
+        public static Tensor<float> L2Norm(Tensor<float> MeanPooledTensor)
         {
             // L2 NORMALIZATION
             // Compute L2 norm along axis 1 (dim=1)
-            TensorFloat l2Norms = ops.ReduceL2(MeanPooledTensor, new int[] { 1 }, true);
+            Tensor<float> l2Norms = Functional.ReduceL2(MeanPooledTensor, new int[] { 1 }, true);
 
             // Broadcast the L2 norms to the original shape
-            TensorFloat l2NormsBroadcasted = ops.Expand(l2Norms, MeanPooledTensor.shape) as TensorFloat;
+            Tensor<float> l2NormsBroadcasted = Functional.Expand(l2Norms, MeanPooledTensor.shape);
 
             // Divide sentence_embeddings by their L2 norms to achieve normalization
-            TensorFloat NormalizedEmbeddings = ops.Div(MeanPooledTensor, l2NormsBroadcasted);
+            Tensor<float> NormalizedEmbeddings = MeanPooledTensor / l2NormsBroadcasted;
 
             return NormalizedEmbeddings;
         }
@@ -179,7 +177,7 @@ namespace SentenceSimilarityUtils
             TensorShape shape = new TensorShape(TokenIds.Count, TokenIds[0].Count);
 
             // Create a new tensor from the array
-            TensorInt TokenIdsTensor = new TensorInt(shape, data);
+            Tensor<int> TokenIdsTensor = new Tensor<int>(shape, data);
 
             // Flatten the nested list into a one-dimensional array
             List<int> flattenedData2 = new List<int>();
@@ -193,7 +191,7 @@ namespace SentenceSimilarityUtils
             TensorShape shape2 = new TensorShape(AttentionMask.Count, AttentionMask[0].Count);
 
             // Create a new tensor from the array
-            TensorInt AttentionMaskTensor = new TensorInt(shape2, data2);
+            Tensor<int> AttentionMaskTensor = new Tensor<int>(shape2, data2);
 
             // Flatten the nested list into a one-dimensional array
             List<int> flattenedData3 = new List<int>();
@@ -207,7 +205,7 @@ namespace SentenceSimilarityUtils
             TensorShape shape3 = new TensorShape(TokenTypeIds.Count, TokenTypeIds[0].Count);
 
             // Create a new tensor from the array
-            TensorInt TokenTypeIdsTensor = new TensorInt(shape3, data3);
+            Tensor<int> TokenTypeIdsTensor = new Tensor<int>(shape3, data3);
 
             Dictionary<string, Tensor> inputTensors = new Dictionary<string, Tensor>() {
                 { "input_ids", TokenIdsTensor },

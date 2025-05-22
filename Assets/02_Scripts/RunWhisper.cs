@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Unity.Sentis;
+using Unity.InferenceEngine;
+using Unity.InferenceEngine.Functional;
 using UnityEngine;
 
 /*
@@ -31,7 +32,7 @@ public class RunWhisper : MonoBehaviour
     [SerializeField] private ModelAsset AudioEncoder_Tiny;
     [SerializeField] private ModelAsset LogMelSepctro;
 
-    IWorker decoderEngine, encoderEngine, spectroEngine;
+    Worker decoderEngine, encoderEngine, spectroEngine;
 
     const BackendType backend = BackendType.GPUCompute;
 
@@ -50,9 +51,6 @@ public class RunWhisper : MonoBehaviour
     const int TRANSCRIBE = 50359;
     const int START_TIME = 50364;
 
-    Ops ops;
-    ITensorAllocator allocator;
-
     int numSamples;
     float[] data;
     string[] tokens;
@@ -63,7 +61,7 @@ public class RunWhisper : MonoBehaviour
     // Used for special character decoding
     int[] whiteSpaceCharacters = new int[256];
 
-    TensorFloat encodedAudio;
+    Tensor<float> encodedAudio;
 
     bool transcribe = false;
     string outputString = "";
@@ -73,9 +71,6 @@ public class RunWhisper : MonoBehaviour
 
     void Start()
     {
-        allocator = new TensorCachingAllocator();
-        ops = WorkerFactory.CreateOps(backend, allocator);
-
         SetupWhiteSpaceShifts();
 
         GetTokens();
@@ -84,9 +79,9 @@ public class RunWhisper : MonoBehaviour
         Model encoder = ModelLoader.Load(AudioEncoder_Tiny);
         Model spectro = ModelLoader.Load(LogMelSepctro);
 
-        decoderEngine = WorkerFactory.CreateWorker(backend, decoder);
-        encoderEngine = WorkerFactory.CreateWorker(backend, encoder);
-        spectroEngine = WorkerFactory.CreateWorker(backend, spectro);
+        decoderEngine = new Worker(decoder, backend);
+        encoderEngine = new Worker(encoder, backend);
+        spectroEngine = new Worker(spectro, backend);
 
 
     }
@@ -143,16 +138,18 @@ public class RunWhisper : MonoBehaviour
 
     void EncodeAudio()
     {
-        using var input = new TensorFloat(new TensorShape(1, numSamples), data);
+        using var input = new Tensor<float>(new TensorShape(1, numSamples), data);
 
         // Pad out to 30 seconds at 16khz if necessary
-        using var input30seconds = ops.Pad(input, new int[] { 0, 0, 0, maxSamples - numSamples });
+        float[] paddedData = new float[maxSamples];
+        System.Array.Copy(data, 0, paddedData, 0, numSamples);
+        using var input30seconds = new Tensor<float>(new TensorShape(1, maxSamples), paddedData);
 
         spectroEngine.Execute(input30seconds);
-        var spectroOutput = spectroEngine.PeekOutput() as TensorFloat;
+        var spectroOutput = spectroEngine.PeekOutput() as Tensor<float>;
 
         encoderEngine.Execute(spectroOutput);
-        encodedAudio = encoderEngine.PeekOutput() as TensorFloat;
+        encodedAudio = encoderEngine.PeekOutput() as Tensor<float>;
     }
 
 
@@ -161,7 +158,7 @@ public class RunWhisper : MonoBehaviour
     {
         if (transcribe && currentToken < outputTokens.Length - 1)
         {
-            using var tokensSoFar = new TensorInt(new TensorShape(1, outputTokens.Length), outputTokens);
+            using var tokensSoFar = new Tensor<int>(new TensorShape(1, outputTokens.Length), outputTokens);
 
             var inputs = new Dictionary<string, Tensor>
             {
@@ -170,9 +167,9 @@ public class RunWhisper : MonoBehaviour
             };
 
             decoderEngine.Execute(inputs);
-            var tokensOut = decoderEngine.PeekOutput() as TensorFloat;
+            var tokensOut = decoderEngine.PeekOutput() as Tensor<float>;
 
-            using var tokensPredictions = ops.ArgMax(tokensOut, 2, false);
+            using var tokensPredictions = Unity.InferenceEngine.Functional.ArgMax(tokensOut, 2, false);
             tokensPredictions.MakeReadable();
 
             int ID = tokensPredictions[currentToken];
@@ -230,7 +227,5 @@ public class RunWhisper : MonoBehaviour
         decoderEngine?.Dispose();
         encoderEngine?.Dispose();
         spectroEngine?.Dispose();
-        ops?.Dispose();
-        allocator?.Dispose();
     }
 }

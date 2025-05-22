@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.InferenceEngine;
+using Unity.InferenceEngine.Functional;
 using UnityEngine;
 
-namespace Unity.Sentis
+public class MNISTEngine : SingletonMonoBehaviour<MNISTEngine>
 {
-    public class MNISTEngine : SingletonMonoBehaviour<MNISTEngine>
-    {
-        [SerializeField] private ModelAsset _modelAsset;
+    [SerializeField] private ModelAsset _modelAsset;
 
         public readonly Dictionary<int, int> _map = new()
         {
@@ -23,16 +23,16 @@ namespace Unity.Sentis
         public const int imageWidth = 28;
 
         private Model _runtimeModel;
-        private Tensor _inputTensor;
-        private IWorker _worker;
-        private TensorFloat _outputTensor;
-        private Ops _operations;
+        private Tensor<float> _inputTensor;
+        private Worker _worker;
+        private Tensor<float> _outputTensor;
 
         private Camera _lookCamera;
 
         private void Start()
         {
             _lookCamera = Camera.main;
+            _inputTensor = new Tensor<float>(new TensorShape(1, 1, imageWidth, imageWidth));
         }
 
         private void Update()
@@ -51,7 +51,6 @@ namespace Unity.Sentis
         {
             _inputTensor?.Dispose();
             _worker?.Dispose();
-            _operations?.Dispose();
             _outputTensor?.Dispose();
         }
 
@@ -82,13 +81,13 @@ namespace Unity.Sentis
             OnDestroy();
 
             _runtimeModel = ModelLoader.Load(_modelAsset);
-            _inputTensor = TextureConverter.ToTensor(texture, imageWidth, imageWidth, 1);
-            _worker = WorkerFactory.CreateWorker(_backendType, _runtimeModel);
+            _inputTensor = new Tensor<float>(new TensorShape(1, 1, imageWidth, imageWidth));
+            TextureConverter.ToTensor(texture, _inputTensor);
+            _worker = new Worker(_runtimeModel, _backendType);
             _worker.Execute(_inputTensor);
-            _operations = WorkerFactory.CreateOps(_backendType, null);
-            _outputTensor = _worker.PeekOutput() as TensorFloat;
+            _outputTensor = _worker.PeekOutput() as Tensor<float>;
 
-            TensorFloat probabilities = _operations.Softmax(_outputTensor);
+            Tensor<float> probabilities = Functional.Softmax(_outputTensor);
 
             probabilities.MakeReadable();
 
@@ -100,4 +99,3 @@ namespace Unity.Sentis
             return (probability, predictedIndex);
         }
     }
-}

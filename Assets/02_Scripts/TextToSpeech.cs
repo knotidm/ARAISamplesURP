@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.Sentis;
+using Unity.InferenceEngine;
 using UnityEngine;
 
 //                      Jets Text-To-Speech Inference
@@ -40,7 +40,7 @@ public class TextToSpeech : MonoBehaviour
 
     Dictionary<string, string> dict = new();
 
-    IWorker engine;
+    Worker engine;
 
     AudioClip clip;
 
@@ -53,7 +53,7 @@ public class TextToSpeech : MonoBehaviour
     void LoadModel()
     {
         var model = ModelLoader.Load(_modelAsset);
-        engine = WorkerFactory.CreateWorker(BackendType.GPUCompute, model);
+        engine = new Worker(model, BackendType.GPUCompute);
     }
 
     public void RunTextToSpeech(string inputText)
@@ -172,10 +172,10 @@ public class TextToSpeech : MonoBehaviour
     {
         int[] tokens = GetTokens(ptext);
 
-        using var input = new TensorInt(new TensorShape(tokens.Length), tokens);
+        using var input = new Tensor<int>(new TensorShape(tokens.Length), tokens);
         var result = engine.Execute(input);
 
-        TensorFloat output = result.PeekOutput("wav") as TensorFloat;
+        Tensor<float> output = result.PeekOutput("wav") as Tensor<float>;
         output.MakeReadable();
         float[] samples = output.ToReadOnlyArray();
 

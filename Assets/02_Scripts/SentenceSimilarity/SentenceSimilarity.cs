@@ -2,7 +2,8 @@ using SentenceSimilarityUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Sentis;
+using Unity.InferenceEngine;
+using Unity.InferenceEngine.Functional;
 using UnityEngine;
 
 
@@ -10,9 +11,7 @@ public class SentenceSimilarity : MonoBehaviour
 {
     public ModelAsset modelAsset;
     public Model runtimeModel;
-    public IWorker worker;
-    public ITensorAllocator allocator;
-    public Ops ops;
+    public Worker worker;
 
 
     /// <summary>
@@ -24,13 +23,7 @@ public class SentenceSimilarity : MonoBehaviour
         runtimeModel = ModelLoader.Load(modelAsset);
 
         // Create an engine and set the backend as GPU //GPUCompute
-        worker = WorkerFactory.CreateWorker(BackendType.CPU, runtimeModel);
-
-        // Create an allocator.
-        allocator = new TensorCachingAllocator();
-
-        // Create an operator
-        ops = WorkerFactory.CreateOps(BackendType.GPUCompute, allocator);
+        worker = new Worker(runtimeModel, BackendType.CPU);
     }
 
 
@@ -45,10 +38,8 @@ public class SentenceSimilarity : MonoBehaviour
     /// Encode the input
     /// </summary>
     /// <param name="input"></param>
-    /// <param name="worker"></param>
-    /// <param name="ops"></param>
     /// <returns></returns>
-    public TensorFloat Encode(List<string> input, IWorker worker, Ops ops)
+    public Tensor<float> Encode(List<string> input)
     {
         // Step 1: Tokenize the sentences
         Dictionary<string, Tensor> inputSentencesTokensTensor = SentenceSimilarityUtils_.TokenizeInput(input);
@@ -57,13 +48,13 @@ public class SentenceSimilarity : MonoBehaviour
         worker.Execute(inputSentencesTokensTensor);
 
         // Step 3: Get the output from the neural network
-        TensorFloat outputTensor = worker.PeekOutput("last_hidden_state") as TensorFloat;
+        Tensor<float> outputTensor = worker.PeekOutput("last_hidden_state") as Tensor<float>;
 
         // Step 4: Perform pooling
-        TensorFloat MeanPooledTensor = SentenceSimilarityUtils_.MeanPooling(inputSentencesTokensTensor["attention_mask"], outputTensor, ops);
+        Tensor<float> MeanPooledTensor = SentenceSimilarityUtils_.MeanPooling(inputSentencesTokensTensor["attention_mask"], outputTensor);
 
         // Step 5: Normalize the results
-        TensorFloat NormedTensor = SentenceSimilarityUtils_.L2Norm(MeanPooledTensor, ops);
+        Tensor<float> NormedTensor = SentenceSimilarityUtils_.L2Norm(MeanPooledTensor);
 
         return NormedTensor;
     }
@@ -78,9 +69,9 @@ public class SentenceSimilarity : MonoBehaviour
     /// <param name="InputSequence"></param>
     /// <param name="ComparisonSequences"></param>
     /// <returns></returns>
-    public TensorFloat SentenceSimilarityScores(TensorFloat InputSequence, TensorFloat ComparisonSequences)
+    public Tensor<float> SentenceSimilarityScores(Tensor<float> InputSequence, Tensor<float> ComparisonSequences)
     {
-        TensorFloat SentenceSimilarityScores_ = ops.MatMul2D(InputSequence, ComparisonSequences, false, true);
+        Tensor<float> SentenceSimilarityScores_ = Functional.MatMul(InputSequence, Functional.Transpose(ComparisonSequences, new int[] { 1, 0 }));
         return SentenceSimilarityScores_;
     }
 
@@ -102,15 +93,15 @@ public class SentenceSimilarity : MonoBehaviour
         ComparisonSentences = comparisonSentences.ToList();
 
         // Step 2: Encode the input sentences and comparison sentences
-        TensorFloat NormEmbedSentences = Encode(InputSentences, worker, ops);
-        TensorFloat NormEmbedComparisonSentences = Encode(ComparisonSentences, worker, ops);
+        Tensor<float> NormEmbedSentences = Encode(InputSentences);
+        Tensor<float> NormEmbedComparisonSentences = Encode(ComparisonSentences);
 
         // Calculate the similarity score of the player input with each action
-        TensorFloat scores = SentenceSimilarityScores(NormEmbedSentences, NormEmbedComparisonSentences);
+        Tensor<float> scores = SentenceSimilarityScores(NormEmbedSentences, NormEmbedComparisonSentences);
         scores.MakeReadable(); // Be able to read this tensor
 
         // Helper to return only best score and index
-        TensorInt scoreIndex = ops.ArgMax(scores, 1, true);
+        Tensor<int> scoreIndex = Functional.ArgMax(scores, 1, true);
         scoreIndex.MakeReadable();
 
         int scoreIndexInt = scoreIndex[0];
